@@ -7,73 +7,26 @@
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: Arial, sans-serif; background: #f0f2f5; min-height: 100vh; }
-.header { background: #1a1a2e; color: white; padding: 18px 30px; display: flex; align-items: center; gap: 14px; }
+.header { background: #1a1a2e; color: white; padding: 18px 30px; }
 .header h1 { font-size: 20px; }
-.header p { font-size: 13px; opacity: 0.7; margin-top: 3px; }
-.content { max-width: 520px; margin: 40px auto; padding: 0 20px; }
-.card { background: white; border-radius: 14px; padding: 32px; box-shadow: 0 2px 16px rgba(0,0,0,0.09); margin-bottom: 20px; }
+.header p  { font-size: 13px; opacity: 0.7; margin-top: 3px; }
+.content { max-width: 600px; margin: 36px auto; padding: 0 20px; }
+.card { background: white; border-radius: 14px; padding: 28px; box-shadow: 0 2px 14px rgba(0,0,0,0.08); margin-bottom: 20px; }
 
-/* ── Login card ── */
-.card-title { font-size: 17px; font-weight: bold; color: #1e293b; margin-bottom: 6px; }
-.card-sub   { font-size: 13px; color: #94a3b8; margin-bottom: 24px; }
-.field { margin-bottom: 16px; }
-.field label { display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px; }
-.field input {
-  width: 100%; padding: 11px 14px; border: 1.5px solid #e2e8f0;
-  border-radius: 8px; font-size: 14px; outline: none; transition: border 0.2s;
-}
-.field input:focus { border-color: #3b82f6; }
-.btn-primary {
-  display: block; width: 100%; padding: 13px;
-  background: #1d4ed8; color: white; border: none; border-radius: 8px;
-  font-size: 15px; font-weight: bold; cursor: pointer; margin-top: 8px;
-}
-.btn-primary:hover:not(:disabled) { background: #1e40af; }
-.btn-primary:disabled { background: #93c5fd; cursor: not-allowed; }
-.btn-secondary {
-  display: inline-block; padding: 10px 22px; border: 1.5px solid #cbd5e1;
-  color: #64748b; background: white; border-radius: 8px; font-size: 13px;
-  cursor: pointer; margin-top: 10px;
-}
-.btn-secondary:hover { background: #f8fafc; }
-
-/* ── Status bar ── */
-.status-bar {
-  display: flex; align-items: center; gap: 10px; padding: 12px 16px;
-  border-radius: 8px; font-size: 13px; margin-top: 16px;
-}
-.status-bar.info    { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
-.status-bar.success { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
-.status-bar.error   { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
-.status-bar.warn    { background: #fefce8; color: #854d0e; border: 1px solid #fef08a; }
-.spinner {
-  width: 18px; height: 18px; border: 2px solid #bfdbfe;
-  border-top-color: #1d4ed8; border-radius: 50%; animation: spin 0.8s linear infinite; flex-shrink: 0;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* ── MFA card ── */
-.mfa-number {
-  font-size: 52px; font-weight: 900; color: #1d4ed8;
-  text-align: center; letter-spacing: 6px; padding: 20px 0;
-  background: #eff6ff; border-radius: 10px; margin: 20px 0;
-}
-.mfa-hint { font-size: 13px; color: #64748b; text-align: center; margin-bottom: 8px; }
-
-/* ── Upload card ── */
-.upload-area {
-  border: 2px dashed #c0cfe0; border-radius: 10px; padding: 40px 30px;
-  text-align: center; cursor: pointer; transition: all 0.2s; background: #fafcff;
-}
+/* Upload */
+.upload-area { border: 2px dashed #c0cfe0; border-radius: 10px; padding: 44px 30px; text-align: center; cursor: pointer; transition: all .2s; background: #fafcff; }
 .upload-area:hover { border-color: #3b82f6; background: #eff6ff; }
 .upload-area input { display: none; }
-.upload-area .icon { font-size: 38px; margin-bottom: 8px; }
+.upload-area .icon { font-size: 40px; margin-bottom: 8px; }
 .upload-area h3 { font-size: 15px; color: #1e40af; margin-bottom: 4px; }
 .upload-area p  { color: #94a3b8; font-size: 13px; }
 .upload-area.file-ok { border-color: #22c55e; background: #f0fdf4; }
 .upload-area.file-ok h3 { color: #16a34a; }
+.btn-primary { display: block; width: 100%; padding: 13px; background: #1d4ed8; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; margin-top: 16px; }
+.btn-primary:hover:not(:disabled) { background: #1e40af; }
+.btn-primary:disabled { background: #93c5fd; cursor: not-allowed; }
 
-/* ── Progress card ── */
+/* Progress */
 .steps { display: flex; gap: 10px; margin-bottom: 20px; }
 .step { flex: 1; padding: 12px 8px; border-radius: 8px; background: #f8fafc; border: 2px solid #e2e8f0; text-align: center; }
 .step.active { border-color: #3b82f6; background: #eff6ff; }
@@ -83,79 +36,61 @@ body { font-family: Arial, sans-serif; background: #f0f2f5; min-height: 100vh; }
 .step.done   .step-num { color: #16a34a; }
 .step-label { color: #64748b; font-size: 11px; }
 .progress-bar { height: 12px; background: #e2e8f0; border-radius: 6px; overflow: hidden; margin: 10px 0; }
-.progress-fill { height: 100%; background: linear-gradient(90deg,#3b82f6,#1d4ed8); width: 0; transition: width 0.4s; border-radius: 6px; }
+.progress-fill { height: 100%; background: linear-gradient(90deg,#3b82f6,#1d4ed8); width: 0; transition: width .4s; border-radius: 6px; }
 .progress-meta { display: flex; justify-content: space-between; font-size: 12px; color: #64748b; }
 .log { background: #0f172a; color: #94a3b8; border-radius: 8px; padding: 12px; font-family: monospace; font-size: 12px; max-height: 180px; overflow-y: auto; margin-top: 14px; }
 .log .ok   { color: #4ade80; }
 .log .err  { color: #f87171; }
 .log .info { color: #60a5fa; }
 
-/* ── Done card ── */
+/* Done */
 .summary { text-align: center; padding: 16px 0; }
 .summary h2 { color: #16a34a; font-size: 24px; margin-bottom: 8px; }
 .summary p  { color: #64748b; margin-bottom: 20px; }
 .btn-download { background: #16a34a; color: white; border: none; padding: 13px 36px; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; }
 .btn-download:hover { background: #15803d; }
+.btn-secondary { display: inline-block; padding: 10px 22px; border: 1.5px solid #cbd5e1; color: #64748b; background: white; border-radius: 8px; font-size: 13px; cursor: pointer; margin-top: 10px; }
+
+/* Interaction dock */
+#interactionDock { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: #f59e0b; color: #1c1917; padding: 10px 20px; font-size: 13px; font-weight: 600; z-index: 998; }
+#interactionDock button { margin-left: 14px; background: #1c1917; color: white; border: none; border-radius: 6px; padding: 5px 14px; cursor: pointer; font-size: 12px; }
+
+/* Modals */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.65); z-index: 9999; align-items: center; justify-content: center; }
+.modal-box { background: #1e293b; border-radius: 16px; padding: 32px; max-width: 420px; width: 90%; box-shadow: 0 24px 60px rgba(0,0,0,.5); }
+.modal-title { font-size: 1.1rem; font-weight: 700; color: #f1f5f9; margin-bottom: 6px; }
+.modal-sub   { font-size: .85rem; color: #94a3b8; margin-bottom: 20px; }
+.modal-label { font-size: .75rem; color: #64748b; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
+.modal-input {
+  width: 100%; box-sizing: border-box; background: #0f172a; border: 1px solid #334155;
+  border-radius: 8px; padding: 10px 14px; color: #f1f5f9; font-size: 1rem; margin-bottom: 12px;
+}
+.modal-input:focus { outline: none; border-color: #6366f1; }
+.modal-actions { display: flex; gap: 10px; }
+.modal-btn-primary { flex: 1; background: #6366f1; color: #fff; border: none; border-radius: 8px; padding: 11px; font-size: .95rem; cursor: pointer; font-weight: 600; }
+.modal-btn-primary:hover { background: #4f46e5; }
+.modal-btn-close { background: #334155; color: #f1f5f9; border: none; border-radius: 8px; padding: 11px 18px; font-size: .95rem; cursor: pointer; }
+.modal-btn-confirm { flex: 1; background: #22c55e; color: #111; border: none; border-radius: 8px; padding: 11px; font-size: .95rem; cursor: pointer; font-weight: 600; }
+.modal-status { margin-top: 12px; font-size: .82rem; color: #94a3b8; text-align: center; }
+
+/* MFA number display */
+.mfa-number { font-size: 52px; font-weight: 900; color: #6366f1; text-align: center; letter-spacing: 6px; padding: 16px 0; background: #1d2d50; border-radius: 10px; margin: 16px 0; }
+.spinner { width: 18px; height: 18px; border: 2px solid #334155; border-top-color: #6366f1; border-radius: 50%; animation: spin .8s linear infinite; display: inline-block; vertical-align: middle; margin-right: 8px; }
+@keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
 
 <div class="header">
-  <div>
-    <h1>Fabric DV — Image Embedder</h1>
-    <p>Automatically embeds SharePoint images into your Excel file</p>
-  </div>
+  <h1>Fabric DV — Image Embedder</h1>
+  <p>Uploads your Excel to the bot, which logs into SharePoint, downloads images and embeds them automatically.</p>
 </div>
 
 <div class="content">
 
-  <!-- ① Login -->
-  <div class="card" id="card-login">
-    <div class="card-title">Sign in to SharePoint</div>
-    <div class="card-sub">Enter your Microsoft credentials to get started</div>
-    <div class="field">
-      <label>Email address</label>
-      <input type="email" id="inp-email" placeholder="you@company.com" autocomplete="username">
-    </div>
-    <div class="field">
-      <label>Password</label>
-      <input type="password" id="inp-password" placeholder="••••••••" autocomplete="current-password">
-    </div>
-    <button class="btn-primary" id="btn-login" onclick="doLogin()">Sign In</button>
-    <div id="login-status" style="display:none"></div>
-  </div>
-
-  <!-- ② MFA -->
-  <div class="card" id="card-mfa" style="display:none">
-    <div class="card-title" id="mfa-title">Verification required</div>
-    <div class="card-sub" id="mfa-sub">Check your phone</div>
-
-    <!-- Number-matching display (push) -->
-    <div id="mfa-push-section" style="display:none">
-      <div class="mfa-hint">Open Microsoft Authenticator and match this number:</div>
-      <div class="mfa-number" id="mfa-display-num">—</div>
-      <div class="mfa-hint">Waiting for approval on your device…</div>
-      <div style="display:flex;justify-content:center;margin-top:8px"><div class="spinner"></div></div>
-    </div>
-
-    <!-- Code entry (TOTP / SMS) -->
-    <div id="mfa-code-section" style="display:none">
-      <div class="field" style="margin-top:12px">
-        <label>6-digit code</label>
-        <input type="tel" id="inp-mfa-code" placeholder="123456" maxlength="6"
-               style="font-size:22px;letter-spacing:6px;text-align:center"
-               oninput="this.value=this.value.replace(/\D/g,'')"
-               onkeydown="if(event.key==='Enter')submitMfa()">
-      </div>
-      <button class="btn-primary" onclick="submitMfa()">Verify</button>
-    </div>
-
-    <div id="mfa-status" style="display:none;margin-top:14px"></div>
-  </div>
-
-  <!-- ③ Upload -->
-  <div class="card" id="card-upload" style="display:none">
-    <div class="card-title" style="margin-bottom:16px">Upload your Excel file</div>
+  <!-- Upload card -->
+  <div class="card" id="card-upload">
+    <div style="font-size:17px;font-weight:bold;color:#1e293b;margin-bottom:16px">Upload Excel File</div>
     <div class="upload-area" id="uploadArea"
          onclick="document.getElementById('fileInput').click()"
          ondragover="event.preventDefault()" ondrop="handleDrop(event)">
@@ -164,174 +99,107 @@ body { font-family: Arial, sans-serif; background: #f0f2f5; min-height: 100vh; }
       <h3 id="uploadTitle">Click to upload Excel file</h3>
       <p id="uploadSub">Drag & drop or click — .xlsx files only</p>
     </div>
-    <button class="btn-primary" id="startBtn" onclick="startProcess()" disabled style="margin-top:16px">
-      🚀 Start — Embed Images Automatically
+    <button class="btn-primary" id="startBtn" onclick="startProcess()" disabled>
+      🚀 Send to Bot
     </button>
   </div>
 
-  <!-- ④ Progress -->
+  <!-- Progress card -->
   <div class="card" id="card-progress" style="display:none">
     <div class="steps">
-      <div class="step" id="step1"><div class="step-num" id="s1">1</div><div class="step-label">Download Images</div></div>
-      <div class="step" id="step2"><div class="step-num" id="s2">2</div><div class="step-label">Build Excel</div></div>
+      <div class="step" id="step1"><div class="step-num" id="s1">1</div><div class="step-label">Login</div></div>
+      <div class="step" id="step2"><div class="step-num" id="s2">2</div><div class="step-label">Download</div></div>
+      <div class="step" id="step3"><div class="step-num" id="s3">3</div><div class="step-label">Build Excel</div></div>
     </div>
     <div class="progress-meta">
-      <span id="progressLabel">Starting…</span>
+      <span id="progressLabel">Starting...</span>
       <span id="progressCount"></span>
     </div>
     <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
     <div class="log" id="log"></div>
   </div>
 
-  <!-- ⑤ Done -->
+  <!-- Done card -->
   <div class="card" id="card-done" style="display:none">
     <div class="summary">
       <h2>✅ Done!</h2>
       <p id="summaryText"></p>
       <button class="btn-download" onclick="downloadResult()">⬇️ Download Excel with Images</button>
       <br>
-      <button class="btn-secondary" onclick="resetToUpload()">Process Another File</button>
+      <button class="btn-secondary" onclick="resetAll()">Process Another File</button>
     </div>
   </div>
 
 </div>
 
+<!-- Interaction dock (amber bar when modal dismissed) -->
+<div id="interactionDock">
+  <span>⚠ Action needed: </span><span id="dockMsg">The bot needs your input.</span>
+  <button onclick="reopenModal()">Reopen</button>
+</div>
+
+<!-- Login credentials modal (login_form) -->
+<div class="modal-overlay" id="loginModal" style="display:flex;display:none">
+  <div class="modal-box">
+    <div class="modal-title">SharePoint Login Required</div>
+    <div class="modal-sub" id="loginMsg">Enter your Microsoft / SharePoint credentials.</div>
+    <div class="modal-label">Email address</div>
+    <input class="modal-input" type="email" id="loginEmail" placeholder="you@company.com" autocomplete="username">
+    <div class="modal-label">Password</div>
+    <input class="modal-input" type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password"
+           onkeydown="if(event.key==='Enter')submitLogin()">
+    <div class="modal-actions">
+      <button class="modal-btn-primary" onclick="submitLogin()">Sign In</button>
+      <button class="modal-btn-close" onclick="closeModal('loginModal')">Close</button>
+    </div>
+    <div class="modal-status" id="loginStatus"></div>
+  </div>
+</div>
+
+<!-- MFA push (number-matching) modal -->
+<div class="modal-overlay" id="mfaModal" style="display:none">
+  <div class="modal-box">
+    <div class="modal-title">Approve on your phone</div>
+    <div class="modal-sub" id="mfaMsg">Open Microsoft Authenticator and approve the sign-in.</div>
+    <div id="mfaNumWrap" style="display:none">
+      <div style="font-size:.8rem;color:#64748b;text-align:center;margin-bottom:4px">Match this number in the app:</div>
+      <div class="mfa-number" id="mfaNum">—</div>
+    </div>
+    <div style="text-align:center;color:#94a3b8;font-size:.85rem;margin-bottom:16px">
+      <span class="spinner"></span>Waiting for approval on your device...
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn-confirm" onclick="confirmMfa()">✓ Login Complete</button>
+      <button class="modal-btn-close" onclick="closeModal('mfaModal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- OTP / SMS code modal (otp_form) -->
+<div class="modal-overlay" id="otpModal" style="display:none">
+  <div class="modal-box">
+    <div class="modal-title">Enter Verification Code</div>
+    <div class="modal-sub" id="otpMsg">Enter the 6-digit code from your Authenticator app or SMS.</div>
+    <div class="modal-label">6-digit code</div>
+    <input class="modal-input" type="tel" id="otpCode" placeholder="123456" maxlength="6"
+           style="font-size:22px;letter-spacing:6px;text-align:center"
+           oninput="this.value=this.value.replace(/\D/g,'')"
+           onkeydown="if(event.key==='Enter')submitOtp()">
+    <div class="modal-actions">
+      <button class="modal-btn-primary" onclick="submitOtp()">Verify</button>
+      <button class="modal-btn-close" onclick="closeModal('otpModal')">Close</button>
+    </div>
+    <div class="modal-status" id="otpStatus"></div>
+  </div>
+</div>
+
 <script>
-let excelFile = null;
-let resultBlob = null;
-let pollTimer = null;
+let excelFile    = null;
+let pollTimer    = null;
+let dismissedKey = '';
+let _lastIx      = {};
 
-// ── Helpers ─────────────────────────────────────────────────────────
-function showStatus(containerId, msg, type='info') {
-  const el = document.getElementById(containerId);
-  el.style.display = 'block';
-  el.className = 'status-bar ' + type;
-  el.innerHTML = type === 'info'
-    ? `<div class="spinner"></div><span>${msg}</span>`
-    : `<span>${msg}</span>`;
-}
-function hideStatus(id) { document.getElementById(id).style.display = 'none'; }
-
-function log(msg, type='info') {
-  const el = document.getElementById('log');
-  const d = document.createElement('div');
-  d.className = type; d.textContent = msg;
-  el.appendChild(d); el.scrollTop = el.scrollHeight;
-}
-function setProgress(pct, label, count='') {
-  document.getElementById('progressFill').style.width = pct + '%';
-  document.getElementById('progressLabel').textContent = label;
-  document.getElementById('progressCount').textContent = count;
-}
-function setStep(n) {
-  for (let i = 1; i <= 2; i++) {
-    const el = document.getElementById('step'+i);
-    el.classList.remove('active','done');
-    if (i < n)      { el.classList.add('done');   document.getElementById('s'+i).textContent = '✓'; }
-    else if (i===n) { el.classList.add('active'); }
-  }
-}
-
-// ── Login ────────────────────────────────────────────────────────────
-async function doLogin() {
-  const email    = document.getElementById('inp-email').value.trim();
-  const password = document.getElementById('inp-password').value;
-  if (!email || !password) { showStatus('login-status','Please enter your email and password.','error'); return; }
-
-  document.getElementById('btn-login').disabled = true;
-  showStatus('login-status', 'Connecting to SharePoint…', 'info');
-
-  await fetch('/login', {
-    method: 'POST', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({email, password})
-  });
-
-  startLoginPoll();
-}
-
-function startLoginPoll() {
-  pollTimer = setInterval(async () => {
-    const s = await fetch('/status').then(r=>r.json()).catch(()=>null);
-    if (!s) return;
-
-    if (s.status === 'logging_in') {
-      showStatus('login-status', s.message || 'Signing in…', 'info');
-
-    } else if (s.status === 'waiting_mfa') {
-      clearInterval(pollTimer);
-      document.getElementById('card-login').style.display = 'none';
-      showMfa(s);
-
-    } else if (s.status === 'logged_in') {
-      clearInterval(pollTimer);
-      document.getElementById('card-login').style.display = 'none';
-      document.getElementById('card-mfa').style.display = 'none';
-      document.getElementById('card-upload').style.display = 'block';
-
-    } else if (s.status === 'error') {
-      clearInterval(pollTimer);
-      document.getElementById('btn-login').disabled = false;
-      showStatus('login-status', s.message || 'Login failed.', 'error');
-    }
-  }, 1500);
-}
-
-// ── MFA ──────────────────────────────────────────────────────────────
-function showMfa(s) {
-  document.getElementById('card-mfa').style.display = 'block';
-  document.getElementById('mfa-title').textContent =
-    s.mfa_type === 'push' ? 'Approve on your phone' : 'Enter verification code';
-  document.getElementById('mfa-sub').textContent = s.message || '';
-
-  if (s.mfa_type === 'push') {
-    document.getElementById('mfa-push-section').style.display = 'block';
-    document.getElementById('mfa-code-section').style.display = 'none';
-    if (s.display_num) document.getElementById('mfa-display-num').textContent = s.display_num;
-    // Keep polling for approval
-    pollTimer = setInterval(async () => {
-      const st = await fetch('/status').then(r=>r.json()).catch(()=>null);
-      if (!st) return;
-      if (st.status === 'logged_in') {
-        clearInterval(pollTimer);
-        document.getElementById('card-mfa').style.display = 'none';
-        document.getElementById('card-upload').style.display = 'block';
-      } else if (st.status === 'error') {
-        clearInterval(pollTimer);
-        showStatus('mfa-status', st.message || 'Verification failed.', 'error');
-      }
-    }, 2000);
-  } else {
-    document.getElementById('mfa-push-section').style.display = 'none';
-    document.getElementById('mfa-code-section').style.display = 'block';
-    setTimeout(() => document.getElementById('inp-mfa-code').focus(), 100);
-  }
-}
-
-async function submitMfa() {
-  const code = document.getElementById('inp-mfa-code').value.trim();
-  if (code.length < 4) { showStatus('mfa-status','Please enter the code from your device.','error'); return; }
-  showStatus('mfa-status', 'Verifying…', 'info');
-
-  await fetch('/submit-mfa', {
-    method: 'POST', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({code})
-  });
-
-  pollTimer = setInterval(async () => {
-    const s = await fetch('/status').then(r=>r.json()).catch(()=>null);
-    if (!s) return;
-    if (s.status === 'logged_in') {
-      clearInterval(pollTimer);
-      document.getElementById('card-mfa').style.display = 'none';
-      document.getElementById('card-upload').style.display = 'block';
-    } else if (s.status === 'error') {
-      clearInterval(pollTimer);
-      showStatus('mfa-status', s.message || 'Verification failed.', 'error');
-    }
-  }, 1500);
-}
-
-// ── Upload ────────────────────────────────────────────────────────────
+// ── File handling ──────────────────────────────────────────────────
 function handleDrop(e) { e.preventDefault(); loadFile(e.dataTransfer.files[0]); }
 function handleFile(e) { loadFile(e.target.files[0]); }
 function loadFile(file) {
@@ -339,108 +207,217 @@ function loadFile(file) {
   excelFile = file;
   document.getElementById('uploadArea').classList.add('file-ok');
   document.getElementById('uploadTitle').textContent = '✓ ' + file.name;
-  document.getElementById('uploadSub').textContent = (file.size/1024).toFixed(1) + ' KB selected';
+  document.getElementById('uploadSub').textContent   = (file.size/1024).toFixed(1) + ' KB';
   document.getElementById('startBtn').disabled = false;
 }
 
-// ── Process ──────────────────────────────────────────────────────────
+// ── Upload & start ─────────────────────────────────────────────────
 async function startProcess() {
-  const ab  = await excelFile.arrayBuffer();
-  const wb  = XLSX.read(ab, {type:'array'});
-  const ws  = wb.Sheets[wb.SheetNames[0]];
-  const rows = XLSX.utils.sheet_to_json(ws, {defval:''});
-  const urlMap = rows
-    .map((r,i) => ({row:i+2, url:(r.image||'').toString()}))
-    .filter(r => r.url.startsWith('http'));
+  if (!excelFile) return;
+  document.getElementById('startBtn').disabled = true;
 
-  document.getElementById('card-upload').style.display = 'none';
+  const form = new FormData();
+  form.append('file', excelFile);
+  const resp = await fetch('/api/dv/upload-excel', { method: 'POST', body: form });
+  if (!resp.ok) { alert('Upload failed.'); document.getElementById('startBtn').disabled=false; return; }
+
+  document.getElementById('card-upload').style.display   = 'none';
   document.getElementById('card-progress').style.display = 'block';
+  addLog('File sent to bot. Waiting for watcher to pick up...', 'info');
   setStep(1);
-  log(`Found ${urlMap.length} images. Downloading…`, 'info');
 
-  await fetch('/start-download', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({urls: urlMap})
-  });
+  pollTimer = setInterval(pollStatus, 2000);
+}
 
-  let lastDone = 0;
-  pollTimer = setInterval(async () => {
-    const s = await fetch('/status').then(r=>r.json()).catch(()=>null);
-    if (!s) return;
+// ── Status polling ─────────────────────────────────────────────────
+async function pollStatus() {
+  const s = await fetch('/api/dv/status').then(r=>r.json()).catch(()=>null);
+  if (!s) return;
 
-    if (s.status === 'downloading') {
-      setStep(1);
-      const pct = s.total ? Math.round(s.done / s.total * 90) + 5 : 5;
-      setProgress(pct, 'Downloading images…', `${s.done} / ${s.total}`);
-      if (s.done !== lastDone && s.done > 0 && s.done % 25 === 0)
-        log(`✓ Downloaded ${s.done} of ${s.total}…`, 'ok');
-      lastDone = s.done;
-    } else if (s.status === 'done') {
-      clearInterval(pollTimer);
-      log(`✓ ${s.ok_count} images downloaded. ${s.error_count} failed.`, 'ok');
-      await buildExcel();
-    } else if (s.status === 'error') {
-      clearInterval(pollTimer);
-      log('✗ ' + (s.message || 'Unknown error'), 'err');
+  checkInteraction(s.interaction);
+
+  const stage = s.stage || s.status || '';
+
+  if (s.status === 'queued' || stage.toLowerCase().includes('waiting for watcher')) {
+    setProgress(3, 'Waiting for bot...', '');
+  } else if (s.status === 'processing') {
+    const pct = s.total ? Math.round(s.done/s.total*70)+15 : 15;
+
+    if (stage.toLowerCase().includes('login') || stage.toLowerCase().includes('credential') || stage.toLowerCase().includes('mfa')) {
+      setStep(1); setProgress(10, stage, '');
+    } else if (stage.toLowerCase().includes('download') || stage.toLowerCase().includes('image')) {
+      setStep(2);
+      const pct2 = s.total ? Math.round(s.done/s.total*70)+15 : 20;
+      setProgress(pct2, stage, s.total ? `${s.done} / ${s.total}` : '');
+      if (s.done > 0 && s.done % 50 === 0) addLog(`✓ Downloaded ${s.done} of ${s.total}...`, 'ok');
+    } else if (stage.toLowerCase().includes('embed') || stage.toLowerCase().includes('excel')) {
+      setStep(3); setProgress(90, stage, '');
+    } else {
+      setProgress(pct, stage, s.total ? `${s.done}/${s.total}` : '');
     }
-  }, 1500);
+    addLog(stage, 'info');
+
+  } else if (s.status === 'done' || s.has_result) {
+    clearInterval(pollTimer);
+    setStep(4); setProgress(100, 'Complete!', '');
+    addLog(`✓ ${s.ok_count || '?'} images embedded.${s.error_count ? ' ' + s.error_count + ' failed.' : ''}`, 'ok');
+    setTimeout(() => {
+      document.getElementById('card-progress').style.display = 'none';
+      document.getElementById('card-done').style.display     = 'block';
+      document.getElementById('summaryText').textContent =
+        `${s.ok_count || '?'} images embedded.${s.error_count ? ' ' + s.error_count + ' failed.' : ''}`;
+    }, 800);
+
+  } else if (s.status === 'error') {
+    clearInterval(pollTimer);
+    addLog('✗ ' + (s.stage || s.message || 'Error'), 'err');
+    setProgress(0, 'Error — see message above', '');
+  }
 }
 
-async function buildExcel() {
-  setStep(2);
-  setProgress(95, 'Embedding images into Excel…');
-  log('Building Excel file…', 'info');
+// ── Interaction system (login / MFA modals) ────────────────────────
+function ixKey(ix) {
+  return [ix.type||'', ix.message||'', ix.display_num||''].join('::');
+}
 
-  const res  = await fetch('/result').then(r=>r.json());
-  const b64  = await fileToBase64(excelFile);
-  const resp = await fetch('/embed', {
+function checkInteraction(ix) {
+  if (!ix) return;
+  _lastIx = ix;
+  if (ix.status !== 'waiting') { hideAllModals(); hideDock(); dismissedKey=''; return; }
+  const key = ixKey(ix);
+  if (dismissedKey === key) { hideAllModals(); showDock(ix); return; }
+  hideDock();
+
+  if (ix.type === 'login_form') {
+    if (document.getElementById('loginModal').style.display === 'flex') return;
+    document.getElementById('loginMsg').textContent = ix.message || 'Enter your SharePoint credentials.';
+    document.getElementById('loginStatus').textContent = ix.error ? '⚠ ' + ix.error : '';
+    showModal('loginModal');
+    setTimeout(() => document.getElementById('loginEmail').focus(), 80);
+
+  } else if (ix.type === 'otp_form') {
+    if (document.getElementById('otpModal').style.display === 'flex') return;
+    document.getElementById('otpMsg').textContent = ix.message || 'Enter the 6-digit verification code.';
+    document.getElementById('otpStatus').textContent = '';
+    showModal('otpModal');
+    setTimeout(() => document.getElementById('otpCode').focus(), 80);
+
+  } else if (ix.type === 'mfa_push') {
+    if (document.getElementById('mfaModal').style.display === 'flex') return;
+    document.getElementById('mfaMsg').textContent = ix.message || 'Approve on your phone.';
+    const numEl  = document.getElementById('mfaNum');
+    const numWrap = document.getElementById('mfaNumWrap');
+    if (ix.display_num) { numEl.textContent = ix.display_num; numWrap.style.display='block'; }
+    else { numWrap.style.display = 'none'; }
+    showModal('mfaModal');
+  }
+}
+
+function showModal(id) { document.getElementById(id).style.display='flex'; }
+function hideModal(id) { document.getElementById(id).style.display='none'; }
+function hideAllModals() { hideModal('loginModal'); hideModal('mfaModal'); hideModal('otpModal'); }
+
+function closeModal(id) {
+  dismissedKey = ixKey(_lastIx);
+  hideModal(id);
+  if (_lastIx.status === 'waiting') showDock(_lastIx);
+}
+
+function showDock(ix) {
+  const dock = document.getElementById('interactionDock');
+  document.getElementById('dockMsg').textContent =
+    ix.type === 'login_form' ? 'Login credentials needed.' :
+    ix.type === 'otp_form'   ? 'Verification code needed.' :
+    ix.type === 'mfa_push'   ? 'Phone approval needed.' : 'Bot needs your input.';
+  dock.style.display = 'flex';
+}
+
+function hideDock() { document.getElementById('interactionDock').style.display='none'; }
+function reopenModal() { dismissedKey=''; hideDock(); checkInteraction(_lastIx); }
+
+// ── Submit handlers ────────────────────────────────────────────────
+async function submitLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass  = document.getElementById('loginPass').value;
+  if (!email || !pass) { document.getElementById('loginStatus').textContent='Please enter both fields.'; return; }
+  document.getElementById('loginStatus').textContent = 'Sending credentials...';
+  await fetch('/api/dv/interaction', {
     method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({excel:b64, images:res.images, filename:excelFile.name})
+    body: JSON.stringify({response:{username:email, password:pass}})
   });
-  if (!resp.ok) { log('✗ Embed failed', 'err'); return; }
-  resultBlob = await resp.blob();
-  setProgress(100, 'Complete!');
-  log('✓ Excel ready!', 'ok');
-
-  setTimeout(() => {
-    document.getElementById('card-progress').style.display = 'none';
-    document.getElementById('card-done').style.display = 'block';
-    const ok = Object.keys(res.images).length;
-    document.getElementById('summaryText').textContent =
-      `${ok} images embedded.${res.errors?.length ? ' ' + res.errors.length + ' failed.' : ''}`;
-  }, 800);
+  document.getElementById('loginStatus').textContent = 'Credentials sent. Logging in...';
+  document.getElementById('loginEmail').value = '';
+  document.getElementById('loginPass').value  = '';
+  hideModal('loginModal');
 }
 
-function fileToBase64(file) {
-  return new Promise((res,rej) => {
-    const r = new FileReader();
-    r.onload = () => res(r.result.split(',')[1]);
-    r.onerror = rej;
-    r.readAsDataURL(file);
+async function submitOtp() {
+  const code = document.getElementById('otpCode').value.trim();
+  if (code.length < 4) { document.getElementById('otpStatus').textContent='Enter the full code.'; return; }
+  document.getElementById('otpStatus').textContent = 'Sending code...';
+  await fetch('/api/dv/interaction', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({response:{otp:code}})
   });
+  document.getElementById('otpCode').value = '';
+  document.getElementById('otpStatus').textContent = 'Code sent. Verifying...';
+  setTimeout(() => hideModal('otpModal'), 1000);
 }
 
-function downloadResult() {
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(resultBlob);
-  a.download = excelFile.name.replace('.xlsx',' - With Images.xlsx');
-  a.click();
+async function confirmMfa() {
+  await fetch('/api/dv/interaction', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({response:'Login Complete'})
+  });
+  hideModal('mfaModal');
 }
 
-function resetToUpload() {
+// ── Progress helpers ───────────────────────────────────────────────
+function setStep(n) {
+  for (let i=1;i<=3;i++) {
+    const el = document.getElementById('step'+i);
+    el.classList.remove('active','done');
+    if (i<n)       { el.classList.add('done');   document.getElementById('s'+i).textContent='✓'; }
+    else if(i===n) { el.classList.add('active'); }
+  }
+}
+function setProgress(pct, label, count) {
+  document.getElementById('progressFill').style.width  = pct + '%';
+  document.getElementById('progressLabel').textContent = label;
+  document.getElementById('progressCount').textContent = count;
+}
+
+let _lastLogMsg = '';
+function addLog(msg, type='info') {
+  if (msg === _lastLogMsg) return;
+  _lastLogMsg = msg;
+  const el = document.getElementById('log');
+  const d  = document.createElement('div');
+  d.className = type; d.textContent = '[' + new Date().toLocaleTimeString() + '] ' + msg;
+  el.appendChild(d); el.scrollTop = el.scrollHeight;
+}
+
+// ── Download & reset ───────────────────────────────────────────────
+async function downloadResult() {
+  window.location.href = '/api/dv/result';
+}
+
+function resetAll() {
   clearInterval(pollTimer);
-  excelFile = null; resultBlob = null;
-  document.getElementById('card-upload').style.display = 'block';
+  excelFile = null; dismissedKey=''; _lastIx={};
+  hideAllModals(); hideDock();
+  document.getElementById('card-upload').style.display   = 'block';
   document.getElementById('card-progress').style.display = 'none';
-  document.getElementById('card-done').style.display = 'none';
+  document.getElementById('card-done').style.display     = 'none';
   document.getElementById('uploadArea').classList.remove('file-ok');
   document.getElementById('uploadTitle').textContent = 'Click to upload Excel file';
-  document.getElementById('uploadSub').textContent = 'Drag & drop or click — .xlsx files only';
-  document.getElementById('startBtn').disabled = true;
-  document.getElementById('log').innerHTML = '';
+  document.getElementById('uploadSub').textContent   = 'Drag & drop or click — .xlsx files only';
+  document.getElementById('startBtn').disabled       = true;
+  document.getElementById('log').innerHTML           = '';
   document.getElementById('progressFill').style.width = '0';
-  document.getElementById('fileInput').value = '';
-  for(let i=1;i<=2;i++){document.getElementById('step'+i).classList.remove('active','done');document.getElementById('s'+i).textContent=i;}
+  document.getElementById('fileInput').value         = '';
+  _lastLogMsg = '';
+  for(let i=1;i<=3;i++){document.getElementById('step'+i).classList.remove('active','done');document.getElementById('s'+i).textContent=i;}
 }
 </script>
 </body>

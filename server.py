@@ -1,286 +1,246 @@
-from flask import Flask, request, send_file, jsonify
-from playwright.sync_api import sync_playwright
-import openpyxl
-from openpyxl import load_workbook
-from openpyxl.drawing.image import Image as XLImage
-from openpyxl.styles import Alignment, Font
-from openpyxl.utils import get_column_letter
-from PIL import Image as PILImage
-from urllib.parse import urlparse, parse_qs, unquote
-import io, base64, threading, os
+"""
+Fabric DV Image Embedder — Render cloud dashboard.
+
+Architecture (mirrors Procurement / Puma pattern):
+  Browser uploads Excel here → Render stores it as a pending session.
+  Local dv_watcher.py polls pending sessions, runs Playwright to login to
+  SharePoint, downloads images, embeds into Excel, pushes result back.
+  All Playwright work happens on the local Windows machine — NOT on Render.
+
+Push endpoints (require X-API-Key: DV_PUSH_API_KEY):
+  POST /api/push/dv/status       watcher pushes live status
+  POST /api/push/dv/interaction  watcher sets login / MFA prompt
+  POST /api/push/dv/result       watcher pushes completed Excel
+  GET  /api/dv/pending-sessions  watcher polls for pending work
+  POST /api/dv/session-ack       watcher confirms pickup
+
+Browser endpoints:
+  GET  /                         dashboard HTML
+  POST /api/dv/upload-excel      browser uploads Excel file
+  GET  /api/dv/status            browser polls live status
+  GET  /api/dv/interaction       browser polls interaction state
+  POST /api/dv/interaction       browser submits login / MFA response
+  GET  /api/dv/result            browser downloads completed Excel
+  GET  /health                   health check
+"""
+from __future__ import annotations
+
+import base64
+import io
+import json
+import os
+import threading
+import uuid
+from datetime import datetime
+
+from flask import Flask, jsonify, request, send_file
 
 app = Flask(__name__, static_folder='.', static_url_path='')
+PORT    = int(os.environ.get('PORT', 10000))
+API_KEY = os.environ.get('DV_PUSH_API_KEY', '')
 
-PORT = int(os.environ.get('PORT', 5000))
-
-state = {
-    'status': 'idle',       # idle | logging_in | waiting_mfa | logged_in | downloading | done | error
-    'mfa_type': None,       # push | totp | sms | None
-    'display_num': '',      # number shown on screen for number-matching MFA
-    'message': '',
-    'done': 0,
-    'total': 0,
-    'images': {},
-    'errors': [],
-}
-_pw = None
-_browser = None
-_context = None
-_page = None
 _lock = threading.Lock()
 
 
-def parse_direct_url(viewer_url):
-    try:
-        p = urlparse(viewer_url)
-        params = parse_qs(p.query)
-        if 'id' in params:
-            return 'https://tklmu.sharepoint.com' + unquote(params['id'][0])
-    except Exception:
-        pass
-    return viewer_url
-
-def set_state(**kwargs):
-    with _lock:
-        state.update(kwargs)
+def _idle_interaction() -> dict:
+    return {'status': 'idle', 'type': None, 'message': '', 'display_num': '', 'error': '', 'response': None}
 
 
-# ── Login ─────────────────────────────────────────────────────────────
-def do_login(email, password):
-    global _pw, _browser, _context, _page
-
-    set_state(status='logging_in', message='Opening browser and navigating to SharePoint...')
-    try:
-        _pw = sync_playwright().start()
-        launch_args = ['--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu']
-        _browser = _pw.chromium.launch(headless=True, args=launch_args)
-        _context = _browser.new_context(viewport={'width': 1280, 'height': 800})
-        _page = _context.new_page()
-
-        _page.goto('https://tklmu.sharepoint.com', wait_until='domcontentloaded', timeout=30000)
-        _page.wait_for_url('**/microsoftonline.com/**', timeout=30000)
-
-        set_state(message='Entering email...')
-        _page.wait_for_selector('input[type="email"]', timeout=15000)
-        _page.fill('input[type="email"]', email)
-        _page.click('input[type="submit"]')
-        _page.wait_for_load_state('domcontentloaded', timeout=15000)
-
-        set_state(message='Entering password...')
-        try:
-            _page.wait_for_selector('input[type="password"]', timeout=10000)
-            _page.fill('input[type="password"]', password)
-            _page.click('input[type="submit"]')
-            _page.wait_for_load_state('domcontentloaded', timeout=15000)
-        except Exception:
-            pass
-
-        _detect_post_login()
-
-    except Exception as e:
-        set_state(status='error', message=f'Login error: {str(e)}')
+_state: dict = {
+    'running':         False,
+    'status':          'idle',   # idle | queued | processing | done | error
+    'stage':           '',
+    'message':         '',
+    'done':            0,
+    'total':           0,
+    'ok_count':        0,
+    'error_count':     0,
+    'pending_sessions': [],      # [{request_id, filename, excel_b64, queued_at}]
+    'result_b64':      None,
+    'result_filename': None,
+    'interaction':     _idle_interaction(),
+    'last_push':       None,
+}
 
 
-def _detect_post_login():
-    global _page
-    try:
-        url = _page.url
-        html = _page.content().lower()
-
-        if 'sharepoint.com' in url and 'microsoftonline' not in url:
-            _handle_stay_signed_in()
-            return
-
-        # Push / number-matching MFA
-        if 'approve' in html or 'notification' in html or 'number matching' in html:
-            display_num = ''
-            try:
-                num_el = _page.query_selector('[data-viewid="9"] .display-number, .displaySign')
-                if num_el:
-                    display_num = num_el.inner_text().strip()
-            except Exception:
-                pass
-            set_state(
-                status='waiting_mfa',
-                mfa_type='push',
-                display_num=display_num,
-                message='Open Microsoft Authenticator and approve the sign-in request.'
-                        + (f' Match this number: {display_num}' if display_num else ''),
-            )
-            try:
-                _page.wait_for_url('**/sharepoint.com/**', timeout=90000)
-                _handle_stay_signed_in()
-            except Exception:
-                set_state(status='error', message='Push notification timed out. Please try again.')
-            return
-
-        # TOTP / SMS code entry
-        if 'verification code' in html or 'otc' in html or 'code' in html:
-            mfa_type = 'sms' if ('text' in html or 'sms' in html or 'phone' in html) else 'totp'
-            set_state(
-                status='waiting_mfa',
-                mfa_type=mfa_type,
-                display_num='',
-                message='Enter the 6-digit code from your Authenticator app or SMS.',
-            )
-            return
-
-        # Unknown MFA screen
-        set_state(
-            status='waiting_mfa',
-            mfa_type='totp',
-            display_num='',
-            message='Additional verification required. Enter your authentication code.',
-        )
-
-    except Exception as e:
-        set_state(status='error', message=f'Error detecting login state: {e}')
+def _check_key():
+    if API_KEY and request.headers.get('X-API-Key') != API_KEY:
+        return jsonify({'ok': False, 'error': 'Unauthorized'}), 403
+    return None
 
 
-def _handle_stay_signed_in():
-    global _page
-    try:
-        btn = _page.query_selector('input[type="submit"]')
-        if btn:
-            btn.click()
-            _page.wait_for_load_state('domcontentloaded', timeout=10000)
-    except Exception:
-        pass
-    set_state(status='logged_in', message='Logged in successfully! Ready to download images.')
+# ── Static ────────────────────────────────────────────────────────────
 
-
-# ── Download ──────────────────────────────────────────────────────────
-def do_download(url_map):
-    global _context
-    set_state(status='downloading', done=0, total=len(url_map), images={}, errors=[])
-    images = {}
-    errors = []
-    try:
-        for i, item in enumerate(url_map):
-            row = item['row']
-            direct_url = parse_direct_url(item['url'])
-            try:
-                resp = _context.request.get(direct_url, timeout=15000)
-                if resp.ok:
-                    images[str(row)] = base64.b64encode(resp.body()).decode()
-                else:
-                    errors.append(f'Row {row}: HTTP {resp.status}')
-            except Exception as e:
-                errors.append(f'Row {row}: {str(e)[:60]}')
-            set_state(done=i + 1, images=images, errors=errors)
-        set_state(status='done', message=f'Done! {len(images)} images downloaded.')
-    except Exception as e:
-        set_state(status='error', message=f'Download error: {e}')
-
-
-# ── Routes ────────────────────────────────────────────────────────────
 @app.route('/')
 def index():
     return app.send_static_file('image_tool.html')
 
-@app.route('/login', methods=['POST'])
-def login():
-    data = request.json
-    email = data.get('email', '').strip()
-    password = data.get('password', '')
-    if not email or not password:
-        return jsonify({'error': 'Email and password required'}), 400
-    t = threading.Thread(target=do_login, args=(email, password), daemon=True)
-    t.start()
+
+@app.route('/health')
+def health():
+    return jsonify({'ok': True, 'time': datetime.now().isoformat()})
+
+
+# ── Browser: upload Excel ─────────────────────────────────────────────
+
+@app.route('/api/dv/upload-excel', methods=['POST'])
+def upload_excel():
+    f = request.files.get('file')
+    if not f or not f.filename:
+        return jsonify({'ok': False, 'error': 'No file provided'}), 400
+    content = f.read()
+    rid = uuid.uuid4().hex[:12]
+    item = {
+        'request_id': rid,
+        'filename':   os.path.basename(f.filename),
+        'excel_b64':  base64.b64encode(content).decode(),
+        'queued_at':  datetime.now().isoformat(timespec='seconds'),
+    }
+    with _lock:
+        _state['pending_sessions'].append(item)
+        _state['status']          = 'queued'
+        _state['stage']           = 'Waiting for watcher to pick up...'
+        _state['result_b64']      = None
+        _state['result_filename'] = None
+        _state['interaction']     = _idle_interaction()
+        _state['done']            = 0
+        _state['total']           = 0
+    return jsonify({'ok': True, 'request_id': rid})
+
+
+# ── Watcher: poll / ack sessions ─────────────────────────────────────
+
+@app.route('/api/dv/pending-sessions', methods=['GET'])
+def pending_sessions():
+    err = _check_key()
+    if err:
+        return err
+    with _lock:
+        sessions = list(_state['pending_sessions'])
+    return jsonify({'ok': True, 'sessions': sessions})
+
+
+@app.route('/api/dv/session-ack', methods=['POST'])
+def session_ack():
+    err = _check_key()
+    if err:
+        return err
+    rid = (request.get_json(silent=True) or {}).get('request_id', '')
+    with _lock:
+        _state['pending_sessions'] = [s for s in _state['pending_sessions'] if s['request_id'] != rid]
     return jsonify({'ok': True})
 
-@app.route('/submit-mfa', methods=['POST'])
-def submit_mfa():
-    global _page
-    code = request.json.get('code', '').strip()
-    try:
-        inp = _page.query_selector(
-            'input[name="otc"], input[data-viewid], input[placeholder*="code" i], input[type="tel"]'
-        )
-        if inp:
-            inp.fill(code)
-        btn = _page.query_selector('input[type="submit"], button[type="submit"]')
-        if btn:
-            btn.click()
-        _page.wait_for_load_state('domcontentloaded', timeout=15000)
-        _detect_post_login()
-        return jsonify({'ok': True})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
 
-@app.route('/start-download', methods=['POST'])
-def start_download():
-    url_map = request.json.get('urls', [])
-    t = threading.Thread(target=do_download, args=(url_map,), daemon=True)
-    t.start()
+# ── Watcher: push status ──────────────────────────────────────────────
+
+@app.route('/api/push/dv/status', methods=['POST'])
+def push_status():
+    err = _check_key()
+    if err:
+        return err
+    d = request.get_json(force=True, silent=True) or {}
+    with _lock:
+        for key in ('running', 'status', 'stage', 'message', 'done', 'total', 'ok_count', 'error_count'):
+            if key in d:
+                _state[key] = d[key]
+        _state['last_push'] = datetime.now().isoformat(timespec='seconds')
     return jsonify({'ok': True})
 
-@app.route('/status')
+
+# ── Watcher: push interaction (login / MFA prompt) ────────────────────
+
+@app.route('/api/push/dv/interaction', methods=['POST'])
+def push_interaction():
+    err = _check_key()
+    if err:
+        return err
+    d = request.get_json(force=True, silent=True) or {}
+    with _lock:
+        current = dict(_state['interaction'])
+        # Never overwrite a pending answered response until watcher explicitly clears it
+        if current.get('status') != 'answered' or d.get('status') == 'idle':
+            _state['interaction'] = {
+                'status':      d.get('status', 'idle'),
+                'type':        d.get('type'),
+                'message':     d.get('message', ''),
+                'display_num': d.get('display_num', ''),
+                'error':       d.get('error', ''),
+                'response':    None,
+            }
+    return jsonify({'ok': True})
+
+
+# ── Watcher: push completed Excel ─────────────────────────────────────
+
+@app.route('/api/push/dv/result', methods=['POST'])
+def push_result():
+    err = _check_key()
+    if err:
+        return err
+    d = request.get_json(force=True, silent=True) or {}
+    with _lock:
+        _state['result_b64']      = d.get('excel_b64')
+        _state['result_filename'] = d.get('filename', 'Output - With Images.xlsx')
+        _state['status']          = 'done'
+        _state['stage']           = 'Done'
+        _state['running']         = False
+        _state['interaction']     = _idle_interaction()
+    return jsonify({'ok': True})
+
+
+# ── Browser: poll status ──────────────────────────────────────────────
+
+@app.route('/api/dv/status', methods=['GET'])
 def get_status():
     with _lock:
         return jsonify({
-            'status': state['status'],
-            'mfa_type': state['mfa_type'],
-            'display_num': state['display_num'],
-            'message': state['message'],
-            'done': state['done'],
-            'total': state['total'],
-            'ok_count': len(state['images']),
-            'error_count': len(state['errors']),
+            'running':     _state['running'],
+            'status':      _state['status'],
+            'stage':       _state['stage'],
+            'message':     _state['message'],
+            'done':        _state['done'],
+            'total':       _state['total'],
+            'ok_count':    _state['ok_count'],
+            'error_count': _state['error_count'],
+            'has_result':  bool(_state['result_b64']),
+            'interaction': dict(_state['interaction']),
         })
 
-@app.route('/result')
+
+# ── Browser: get / post interaction (login credentials / MFA) ─────────
+
+@app.route('/api/dv/interaction', methods=['GET'])
+def get_interaction():
+    with _lock:
+        return jsonify(dict(_state['interaction']))
+
+
+@app.route('/api/dv/interaction', methods=['POST'])
+def post_interaction():
+    d = request.get_json(silent=True) or {}
+    with _lock:
+        _state['interaction']['response'] = d.get('response')
+        _state['interaction']['status']   = 'answered'
+    return jsonify({'ok': True})
+
+
+# ── Browser: download completed Excel ────────────────────────────────
+
+@app.route('/api/dv/result', methods=['GET'])
 def get_result():
     with _lock:
-        return jsonify({'images': state['images'], 'errors': state['errors'][:10]})
-
-@app.route('/embed', methods=['POST'])
-def embed():
-    data = request.json
-    excel_bytes = base64.b64decode(data['excel'])
-    images = data['images']
-    filename = data.get('filename', 'Output.xlsx')
-
-    wb = load_workbook(io.BytesIO(excel_bytes))
-    ws = wb.active
-    header = [ws.cell(row=1, column=c).value for c in range(1, ws.max_column + 1)]
-
-    if 'Image Preview' in header:
-        ws.delete_cols(header.index('Image Preview') + 1)
-        header = [ws.cell(row=1, column=c).value for c in range(1, ws.max_column + 1)]
-
-    preview_col = ws.max_column + 1
-    ws.cell(row=1, column=preview_col).value = 'Image Preview'
-    ws.cell(row=1, column=preview_col).font = Font(bold=True, name='Arial')
-    ws.column_dimensions[get_column_letter(preview_col)].width = 22
-
-    embedded = 0
-    for row_str, img_b64 in images.items():
-        row = int(row_str)
-        try:
-            pil = PILImage.open(io.BytesIO(base64.b64decode(img_b64))).convert('RGB')
-            pil.thumbnail((120, 120), PILImage.LANCZOS)
-            buf = io.BytesIO()
-            pil.save(buf, format='PNG')
-            buf.seek(0)
-            ws.add_image(XLImage(buf), f'{get_column_letter(preview_col)}{row}')
-            ws.row_dimensions[row].height = 90
-            ws.cell(row=row, column=preview_col).alignment = Alignment(horizontal='center', vertical='center')
-            embedded += 1
-        except Exception as e:
-            print(f'Embed row {row}: {e}')
-
-    out = io.BytesIO()
-    wb.save(out)
-    out.seek(0)
+        b64      = _state['result_b64']
+        filename = _state['result_filename'] or 'Output - With Images.xlsx'
+    if not b64:
+        return jsonify({'ok': False, 'error': 'No result available'}), 404
     return send_file(
-        out,
-        download_name=filename.replace('.xlsx', ' - With Images.xlsx'),
+        io.BytesIO(base64.b64decode(b64)),
+        download_name=filename,
         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         as_attachment=True,
     )
 
 
 if __name__ == '__main__':
-    print(f'\n{"="*50}\n  Open in Chrome: http://localhost:{PORT}\n{"="*50}\n')
+    print(f'\n{"=" * 50}\n  Open in browser: http://localhost:{PORT}\n{"=" * 50}\n')
     app.run(host='0.0.0.0', port=PORT, debug=False, threaded=True)

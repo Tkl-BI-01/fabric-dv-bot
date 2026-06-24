@@ -2,8 +2,8 @@ services:
   - type: web
     name: fabric-dv-bot
     runtime: python
-    buildCommand: pip install -r requirements.txt && playwright install --with-deps chromium
-    startCommand: gunicorn server:app --workers 1 --threads 4 --timeout 120
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn server:app --workers 1 --threads 4 --timeout 60
     envVars:
-      - key: PORT
-        value: 10000
+      - key: DV_PUSH_API_KEY
+        sync: false
