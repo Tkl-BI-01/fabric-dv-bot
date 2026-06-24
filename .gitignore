@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+
+# Runtime — local only, never in repo
+runtime/logs/*.log
+
+# Large files
+*.xlsx
+*.xls
+
+# Sensitive
+.env
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+.claude/
