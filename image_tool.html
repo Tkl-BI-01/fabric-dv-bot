@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Fabric DV — Image Embedder</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: Arial, sans-serif; background: #f0f2f5; min-height: 100vh; }
+.header { background: #1a1a2e; color: white; padding: 18px 30px; display: flex; align-items: center; gap: 14px; }
+.header h1 { font-size: 20px; }
+.header p { font-size: 13px; opacity: 0.7; margin-top: 3px; }
+.content { max-width: 520px; margin: 40px auto; padding: 0 20px; }
+.card { background: white; border-radius: 14px; padding: 32px; box-shadow: 0 2px 16px rgba(0,0,0,0.09); margin-bottom: 20px; }
+
+/* ── Login card ── */
+.card-title { font-size: 17px; font-weight: bold; color: #1e293b; margin-bottom: 6px; }
+.card-sub   { font-size: 13px; color: #94a3b8; margin-bottom: 24px; }
+.field { margin-bottom: 16px; }
+.field label { display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px; }
+.field input {
+  width: 100%; padding: 11px 14px; border: 1.5px solid #e2e8f0;
+  border-radius: 8px; font-size: 14px; outline: none; transition: border 0.2s;
+}
+.field input:focus { border-color: #3b82f6; }
+.btn-primary {
+  display: block; width: 100%; padding: 13px;
+  background: #1d4ed8; color: white; border: none; border-radius: 8px;
+  font-size: 15px; font-weight: bold; cursor: pointer; margin-top: 8px;
+}
+.btn-primary:hover:not(:disabled) { background: #1e40af; }
+.btn-primary:disabled { background: #93c5fd; cursor: not-allowed; }
+.btn-secondary {
+  display: inline-block; padding: 10px 22px; border: 1.5px solid #cbd5e1;
+  color: #64748b; background: white; border-radius: 8px; font-size: 13px;
+  cursor: pointer; margin-top: 10px;
+}
+.btn-secondary:hover { background: #f8fafc; }
+
+/* ── Status bar ── */
+.status-bar {
+  display: flex; align-items: center; gap: 10px; padding: 12px 16px;
+  border-radius: 8px; font-size: 13px; margin-top: 16px;
+}
+.status-bar.info    { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+.status-bar.success { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+.status-bar.error   { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+.status-bar.warn    { background: #fefce8; color: #854d0e; border: 1px solid #fef08a; }
+.spinner {
+  width: 18px; height: 18px; border: 2px solid #bfdbfe;
+  border-top-color: #1d4ed8; border-radius: 50%; animation: spin 0.8s linear infinite; flex-shrink: 0;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── MFA card ── */
+.mfa-number {
+  font-size: 52px; font-weight: 900; color: #1d4ed8;
+  text-align: center; letter-spacing: 6px; padding: 20px 0;
+  background: #eff6ff; border-radius: 10px; margin: 20px 0;
+}
+.mfa-hint { font-size: 13px; color: #64748b; text-align: center; margin-bottom: 8px; }
+
+/* ── Upload card ── */
+.upload-area {
+  border: 2px dashed #c0cfe0; border-radius: 10px; padding: 40px 30px;
+  text-align: center; cursor: pointer; transition: all 0.2s; background: #fafcff;
+}
+.upload-area:hover { border-color: #3b82f6; background: #eff6ff; }
+.upload-area input { display: none; }
+.upload-area .icon { font-size: 38px; margin-bottom: 8px; }
+.upload-area h3 { font-size: 15px; color: #1e40af; margin-bottom: 4px; }
+.upload-area p  { color: #94a3b8; font-size: 13px; }
+.upload-area.file-ok { border-color: #22c55e; background: #f0fdf4; }
+.upload-area.file-ok h3 { color: #16a34a; }
+
+/* ── Progress card ── */
+.steps { display: flex; gap: 10px; margin-bottom: 20px; }
+.step { flex: 1; padding: 12px 8px; border-radius: 8px; background: #f8fafc; border: 2px solid #e2e8f0; text-align: center; }
+.step.active { border-color: #3b82f6; background: #eff6ff; }
+.step.done   { border-color: #22c55e; background: #f0fdf4; }
+.step-num { font-size: 18px; font-weight: bold; color: #94a3b8; margin-bottom: 3px; }
+.step.active .step-num { color: #1d4ed8; }
+.step.done   .step-num { color: #16a34a; }
+.step-label { color: #64748b; font-size: 11px; }
+.progress-bar { height: 12px; background: #e2e8f0; border-radius: 6px; overflow: hidden; margin: 10px 0; }
+.progress-fill { height: 100%; background: linear-gradient(90deg,#3b82f6,#1d4ed8); width: 0; transition: width 0.4s; border-radius: 6px; }
+.progress-meta { display: flex; justify-content: space-between; font-size: 12px; color: #64748b; }
+.log { background: #0f172a; color: #94a3b8; border-radius: 8px; padding: 12px; font-family: monospace; font-size: 12px; max-height: 180px; overflow-y: auto; margin-top: 14px; }
+.log .ok   { color: #4ade80; }
+.log .err  { color: #f87171; }
+.log .info { color: #60a5fa; }
+
+/* ── Done card ── */
+.summary { text-align: center; padding: 16px 0; }
+.summary h2 { color: #16a34a; font-size: 24px; margin-bottom: 8px; }
+.summary p  { color: #64748b; margin-bottom: 20px; }
+.btn-download { background: #16a34a; color: white; border: none; padding: 13px 36px; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; }
+.btn-download:hover { background: #15803d; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>Fabric DV — Image Embedder</h1>
+    <p>Automatically embeds SharePoint images into your Excel file</p>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- ① Login -->
+  <div class="card" id="card-login">
+    <div class="card-title">Sign in to SharePoint</div>
+    <div class="card-sub">Enter your Microsoft credentials to get started</div>
+    <div class="field">
+      <label>Email address</label>
+      <input type="email" id="inp-email" placeholder="you@company.com" autocomplete="username">
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="inp-password" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="btn-primary" id="btn-login" onclick="doLogin()">Sign In</button>
+    <div id="login-status" style="display:none"></div>
+  </div>
+
+  <!-- ② MFA -->
+  <div class="card" id="card-mfa" style="display:none">
+    <div class="card-title" id="mfa-title">Verification required</div>
+    <div class="card-sub" id="mfa-sub">Check your phone</div>
+
+    <!-- Number-matching display (push) -->
+    <div id="mfa-push-section" style="display:none">
+      <div class="mfa-hint">Open Microsoft Authenticator and match this number:</div>
+      <div class="mfa-number" id="mfa-display-num">—</div>
+      <div class="mfa-hint">Waiting for approval on your device…</div>
+      <div style="display:flex;justify-content:center;margin-top:8px"><div class="spinner"></div></div>
+    </div>
+
+    <!-- Code entry (TOTP / SMS) -->
+    <div id="mfa-code-section" style="display:none">
+      <div class="field" style="margin-top:12px">
+        <label>6-digit code</label>
+        <input type="tel" id="inp-mfa-code" placeholder="123456" maxlength="6"
+               style="font-size:22px;letter-spacing:6px;text-align:center"
+               oninput="this.value=this.value.replace(/\D/g,'')"
+               onkeydown="if(event.key==='Enter')submitMfa()">
+      </div>
+      <button class="btn-primary" onclick="submitMfa()">Verify</button>
+    </div>
+
+    <div id="mfa-status" style="display:none;margin-top:14px"></div>
+  </div>
+
+  <!-- ③ Upload -->
+  <div class="card" id="card-upload" style="display:none">
+    <div class="card-title" style="margin-bottom:16px">Upload your Excel file</div>
+    <div class="upload-area" id="uploadArea"
+         onclick="document.getElementById('fileInput').click()"
+         ondragover="event.preventDefault()" ondrop="handleDrop(event)">
+      <input type="file" id="fileInput" accept=".xlsx,.xls" onchange="handleFile(event)">
+      <div class="icon">📊</div>
+      <h3 id="uploadTitle">Click to upload Excel file</h3>
+      <p id="uploadSub">Drag & drop or click — .xlsx files only</p>
+    </div>
+    <button class="btn-primary" id="startBtn" onclick="startProcess()" disabled style="margin-top:16px">
+      🚀 Start — Embed Images Automatically
+    </button>
+  </div>
+
+  <!-- ④ Progress -->
+  <div class="card" id="card-progress" style="display:none">
+    <div class="steps">
+      <div class="step" id="step1"><div class="step-num" id="s1">1</div><div class="step-label">Download Images</div></div>
+      <div class="step" id="step2"><div class="step-num" id="s2">2</div><div class="step-label">Build Excel</div></div>
+    </div>
+    <div class="progress-meta">
+      <span id="progressLabel">Starting…</span>
+      <span id="progressCount"></span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="log" id="log"></div>
+  </div>
+
+  <!-- ⑤ Done -->
+  <div class="card" id="card-done" style="display:none">
+    <div class="summary">
+      <h2>✅ Done!</h2>
+      <p id="summaryText"></p>
+      <button class="btn-download" onclick="downloadResult()">⬇️ Download Excel with Images</button>
+      <br>
+      <button class="btn-secondary" onclick="resetToUpload()">Process Another File</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let excelFile = null;
+let resultBlob = null;
+let pollTimer = null;
+
+// ── Helpers ─────────────────────────────────────────────────────────
+function showStatus(containerId, msg, type='info') {
+  const el = document.getElementById(containerId);
+  el.style.display = 'block';
+  el.className = 'status-bar ' + type;
+  el.innerHTML = type === 'info'
+    ? `<div class="spinner"></div><span>${msg}</span>`
+    : `<span>${msg}</span>`;
+}
+function hideStatus(id) { document.getElementById(id).style.display = 'none'; }
+
+function log(msg, type='info') {
+  const el = document.getElementById('log');
+  const d = document.createElement('div');
+  d.className = type; d.textContent = msg;
+  el.appendChild(d); el.scrollTop = el.scrollHeight;
+}
+function setProgress(pct, label, count='') {
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = label;
+  document.getElementById('progressCount').textContent = count;
+}
+function setStep(n) {
+  for (let i = 1; i <= 2; i++) {
+    const el = document.getElementById('step'+i);
+    el.classList.remove('active','done');
+    if (i < n)      { el.classList.add('done');   document.getElementById('s'+i).textContent = '✓'; }
+    else if (i===n) { el.classList.add('active'); }
+  }
+}
+
+// ── Login ────────────────────────────────────────────────────────────
+async function doLogin() {
+  const email    = document.getElementById('inp-email').value.trim();
+  const password = document.getElementById('inp-password').value;
+  if (!email || !password) { showStatus('login-status','Please enter your email and password.','error'); return; }
+
+  document.getElementById('btn-login').disabled = true;
+  showStatus('login-status', 'Connecting to SharePoint…', 'info');
+
+  await fetch('/login', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({email, password})
+  });
+
+  startLoginPoll();
+}
+
+function startLoginPoll() {
+  pollTimer = setInterval(async () => {
+    const s = await fetch('/status').then(r=>r.json()).catch(()=>null);
+    if (!s) return;
+
+    if (s.status === 'logging_in') {
+      showStatus('login-status', s.message || 'Signing in…', 'info');
+
+    } else if (s.status === 'waiting_mfa') {
+      clearInterval(pollTimer);
+      document.getElementById('card-login').style.display = 'none';
+      showMfa(s);
+
+    } else if (s.status === 'logged_in') {
+      clearInterval(pollTimer);
+      document.getElementById('card-login').style.display = 'none';
+      document.getElementById('card-mfa').style.display = 'none';
+      document.getElementById('card-upload').style.display = 'block';
+
+    } else if (s.status === 'error') {
+      clearInterval(pollTimer);
+      document.getElementById('btn-login').disabled = false;
+      showStatus('login-status', s.message || 'Login failed.', 'error');
+    }
+  }, 1500);
+}
+
+// ── MFA ──────────────────────────────────────────────────────────────
+function showMfa(s) {
+  document.getElementById('card-mfa').style.display = 'block';
+  document.getElementById('mfa-title').textContent =
+    s.mfa_type === 'push' ? 'Approve on your phone' : 'Enter verification code';
+  document.getElementById('mfa-sub').textContent = s.message || '';
+
+  if (s.mfa_type === 'push') {
+    document.getElementById('mfa-push-section').style.display = 'block';
+    document.getElementById('mfa-code-section').style.display = 'none';
+    if (s.display_num) document.getElementById('mfa-display-num').textContent = s.display_num;
+    // Keep polling for approval
+    pollTimer = setInterval(async () => {
+      const st = await fetch('/status').then(r=>r.json()).catch(()=>null);
+      if (!st) return;
+      if (st.status === 'logged_in') {
+        clearInterval(pollTimer);
+        document.getElementById('card-mfa').style.display = 'none';
+        document.getElementById('card-upload').style.display = 'block';
+      } else if (st.status === 'error') {
+        clearInterval(pollTimer);
+        showStatus('mfa-status', st.message || 'Verification failed.', 'error');
+      }
+    }, 2000);
+  } else {
+    document.getElementById('mfa-push-section').style.display = 'none';
+    document.getElementById('mfa-code-section').style.display = 'block';
+    setTimeout(() => document.getElementById('inp-mfa-code').focus(), 100);
+  }
+}
+
+async function submitMfa() {
+  const code = document.getElementById('inp-mfa-code').value.trim();
+  if (code.length < 4) { showStatus('mfa-status','Please enter the code from your device.','error'); return; }
+  showStatus('mfa-status', 'Verifying…', 'info');
+
+  await fetch('/submit-mfa', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({code})
+  });
+
+  pollTimer = setInterval(async () => {
+    const s = await fetch('/status').then(r=>r.json()).catch(()=>null);
+    if (!s) return;
+    if (s.status === 'logged_in') {
+      clearInterval(pollTimer);
+      document.getElementById('card-mfa').style.display = 'none';
+      document.getElementById('card-upload').style.display = 'block';
+    } else if (s.status === 'error') {
+      clearInterval(pollTimer);
+      showStatus('mfa-status', s.message || 'Verification failed.', 'error');
+    }
+  }, 1500);
+}
+
+// ── Upload ────────────────────────────────────────────────────────────
+function handleDrop(e) { e.preventDefault(); loadFile(e.dataTransfer.files[0]); }
+function handleFile(e) { loadFile(e.target.files[0]); }
+function loadFile(file) {
+  if (!file) return;
+  excelFile = file;
+  document.getElementById('uploadArea').classList.add('file-ok');
+  document.getElementById('uploadTitle').textContent = '✓ ' + file.name;
+  document.getElementById('uploadSub').textContent = (file.size/1024).toFixed(1) + ' KB selected';
+  document.getElementById('startBtn').disabled = false;
+}
+
+// ── Process ──────────────────────────────────────────────────────────
+async function startProcess() {
+  const ab  = await excelFile.arrayBuffer();
+  const wb  = XLSX.read(ab, {type:'array'});
+  const ws  = wb.Sheets[wb.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(ws, {defval:''});
+  const urlMap = rows
+    .map((r,i) => ({row:i+2, url:(r.image||'').toString()}))
+    .filter(r => r.url.startsWith('http'));
+
+  document.getElementById('card-upload').style.display = 'none';
+  document.getElementById('card-progress').style.display = 'block';
+  setStep(1);
+  log(`Found ${urlMap.length} images. Downloading…`, 'info');
+
+  await fetch('/start-download', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({urls: urlMap})
+  });
+
+  let lastDone = 0;
+  pollTimer = setInterval(async () => {
+    const s = await fetch('/status').then(r=>r.json()).catch(()=>null);
+    if (!s) return;
+
+    if (s.status === 'downloading') {
+      setStep(1);
+      const pct = s.total ? Math.round(s.done / s.total * 90) + 5 : 5;
+      setProgress(pct, 'Downloading images…', `${s.done} / ${s.total}`);
+      if (s.done !== lastDone && s.done > 0 && s.done % 25 === 0)
+        log(`✓ Downloaded ${s.done} of ${s.total}…`, 'ok');
+      lastDone = s.done;
+    } else if (s.status === 'done') {
+      clearInterval(pollTimer);
+      log(`✓ ${s.ok_count} images downloaded. ${s.error_count} failed.`, 'ok');
+      await buildExcel();
+    } else if (s.status === 'error') {
+      clearInterval(pollTimer);
+      log('✗ ' + (s.message || 'Unknown error'), 'err');
+    }
+  }, 1500);
+}
+
+async function buildExcel() {
+  setStep(2);
+  setProgress(95, 'Embedding images into Excel…');
+  log('Building Excel file…', 'info');
+
+  const res  = await fetch('/result').then(r=>r.json());
+  const b64  = await fileToBase64(excelFile);
+  const resp = await fetch('/embed', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({excel:b64, images:res.images, filename:excelFile.name})
+  });
+  if (!resp.ok) { log('✗ Embed failed', 'err'); return; }
+  resultBlob = await resp.blob();
+  setProgress(100, 'Complete!');
+  log('✓ Excel ready!', 'ok');
+
+  setTimeout(() => {
+    document.getElementById('card-progress').style.display = 'none';
+    document.getElementById('card-done').style.display = 'block';
+    const ok = Object.keys(res.images).length;
+    document.getElementById('summaryText').textContent =
+      `${ok} images embedded.${res.errors?.length ? ' ' + res.errors.length + ' failed.' : ''}`;
+  }, 800);
+}
+
+function fileToBase64(file) {
+  return new Promise((res,rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result.split(',')[1]);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+}
+
+function downloadResult() {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(resultBlob);
+  a.download = excelFile.name.replace('.xlsx',' - With Images.xlsx');
+  a.click();
+}
+
+function resetToUpload() {
+  clearInterval(pollTimer);
+  excelFile = null; resultBlob = null;
+  document.getElementById('card-upload').style.display = 'block';
+  document.getElementById('card-progress').style.display = 'none';
+  document.getElementById('card-done').style.display = 'none';
+  document.getElementById('uploadArea').classList.remove('file-ok');
+  document.getElementById('uploadTitle').textContent = 'Click to upload Excel file';
+  document.getElementById('uploadSub').textContent = 'Drag & drop or click — .xlsx files only';
+  document.getElementById('startBtn').disabled = true;
+  document.getElementById('log').innerHTML = '';
+  document.getElementById('progressFill').style.width = '0';
+  document.getElementById('fileInput').value = '';
+  for(let i=1;i<=2;i++){document.getElementById('step'+i).classList.remove('active','done');document.getElementById('s'+i).textContent=i;}
+}
+</script>
+</body>
+</html>

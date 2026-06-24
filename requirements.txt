@@ -1,0 +1,4 @@
+flask
+playwright
+openpyxl
+Pillow
